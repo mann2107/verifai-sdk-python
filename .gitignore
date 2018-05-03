@@ -1,0 +1,7 @@
+internal_example.py
+notes.md
+dist
+venv
+build
+verifai_sdk.egg-info
+*.pyc
