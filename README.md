@@ -1,4 +1,4 @@
-# Verifai Python SDK
+# Verifai SDK for Python
 
 Great that you choose to use Verifai for your business. This SDK takes
 care of most of the heavy lifting for you. It is aimed to be used
@@ -44,7 +44,7 @@ No personal information is sent to us, never.
 
 Setup the SDK for use first. You can install it via PIP.
 
-    pip install verifai_sdk
+    pip install verifai-sdk
 
 Check if it is installed:
 
