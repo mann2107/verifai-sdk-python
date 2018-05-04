@@ -1,22 +1,20 @@
 # Verifai SDK for Python
 
-Great that you choose to use Verifai for your business. This SDK takes
-care of most of the heavy lifting for you. It is aimed to be used
-for every level of developer. There are some samples provided so you
-can see it working.
+Great that you choose to use Verifai for your business or project. This software development kit (SDK) takes
+care of most of the heavy lifting for you. It is aimed to be used for every level of developer. There are some samples provided so you can see it work.
 
 Features of this SDK are:
 
- * Detect ID documents in JPEG images (in a privacy guarantueed way)
+ * Detect ID documents in JPEG images (in a privacy guaranteed way)
  * Give you information about the detected document
     * Position in the image
     * Type of document
     * The zones on the document
  * Get a cropped out image from the provided image
- * Get cropps from all individual zones
+ * Get crops of all individual zones
  * Apply masks to the ID document image
 
-## Full documentaion
+## Full documentation
 
 The full documentation can be found at https://docs.verifai.com/
 
@@ -26,23 +24,23 @@ This README only contains the basic setup and a simple classify call.
 
 ![Highlevel setup](docs/sdk-highlevel.png)
 
-The basic idea is that all your users or client's private data stays within
+The basic idea is that all of your users or client's private data stays within
 your own network. Data we do not have, we can not loose.
 
 Therefore the heavy lifting takes place in the
-"Verifai Serverside Classifier" and the SDK. The SDK sends a JPEG image
-to it via HTTP POST, and it responds with a JSON result. The SDK
-processes that response for you. You only have tell it where the
-"Serverside Classifier" is on your network.
+"Verifai Server-side Classifier" and the SDK. The SDK sends a JPEG image
+to it via a HTTP POST request, and it responds with a JSON result. The SDK
+processes that response for you. You only have to tell it where the
+"Server-side Classifier" is within your network.
 
-When you need more info, like the kind of document, the name, or what
+When you need more information, like the kind of document you are dealing with, the name, or what
 data is where on the document, it fetches that from the Verifai servers.
 
 No personal information is sent to us, never.
 
 ## Install
 
-Setup the SDK for use first. You can install it via PIP.
+Setup the SDK for use first. You can install it via [PIP](https://pypi.org/project/verifai-sdk/).
 
     pip install verifai-sdk
 
@@ -59,7 +57,7 @@ Check if it is installed:
 
 ## Initialize SDK
 
-If the setup is tested we can continue with the initialisation of the
+If the setup is tested we can continue with the initialization of the
 SDK. From now on we will assume that you initialized the SDK before use.
 
     from verifai_sdk import VerifaiService
@@ -68,18 +66,18 @@ SDK. From now on we will assume that you initialized the SDK before use.
     # the token is used for `SDK` <-> `Verifai API` communication.
     service = VerifaiService(token='<API TOKEN IN HERE>')
 
-    # Tell the service where on your network the "Verifai Serverside
+    # Tell the service where on your network the "Verifai Server-side
     # Classifier" can be found.
-    # See the Verifai Serverside Classifier docs for info about how to
+    # See the Verifai Server-side Classifier docs for info about how to
     # set it up.
-    service.add_clasifier_url('http://localhost:5000/api/')
+    service.add_classifier_url('http://localhost:5000/api/')
 
     # service is now initialized and ready to use.
 
 ## Classify a JPEG image
 
 There are Dutch ID document sample images in the `docs/sample_images/`
-directory. We wille be using the `dutch-id-front-sample.jpg` here.
+directory. We will use `dutch-id-front-sample.jpg` underneath.
 
     import os
 
@@ -105,7 +103,7 @@ position now.
     #   'ymin': 0.45336633920669556
     # }
 
-The postion is the relative position (.5 means half way the image). It
+The position is relative, e.g. 0.5 means half way the image. It
 the top-left and bottom-right are given. You can use this for further
 processing if you like.
 
