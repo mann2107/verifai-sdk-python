@@ -9,16 +9,20 @@ Quick introduction
 Verifai is a AI solution that can detect ID documents in images. See
 http://www.verifai.com/ for more info.
 
+Companies use it to comply with the GDPR legislation that states you
+should not store data about your users and customers that you do not
+need for your business. By masking unneeded data you can comply to that.
+
 Features of this SDK
 --------------------
 
-- Detect ID documents in JPEG images (in a privacy guarantueed way)
+- Detect ID documents in JPEG images (in a privacy guaranteed way)
 - Give you information about the detected document
 - - Position in the image
 - - Type of document
 - - The zones on the document
 - Get a cropped out image from the provided image
-- Get cropps from all individual zones
+- Get crops from all individual zones
 - Apply masks to the ID document image
 
 Setup

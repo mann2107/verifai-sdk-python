@@ -48,6 +48,7 @@ class VerifaiService:
         response = r.json()
         if response['status'] == 'SUCCESS':
             return VerifaiDocument(response, image, self)
+
         return None
 
     def classify_image_path(self, image_path):
@@ -72,7 +73,7 @@ class VerifaiService:
         r = requests.get(self.base_api_url + path, headers=headers, params=params, verify=self.ssl_verify)
         if r.status_code == 200:
             return r.json()
-        return None
+        r.raise_for_status()
 
     def __check_clasifier_url(self, url):
         try:
@@ -90,7 +91,7 @@ class VerifaiDocument:
     id_side = None
     coords = None
 
-    zones = None
+
 
     image = None
     cropped_image = None
@@ -102,6 +103,7 @@ class VerifaiDocument:
         self.coords = response['coords']
         self.load_image(b_jpeg_image)
         self.__model_data = None
+        self.__zones = None
 
     @property
     def model(self):
@@ -149,8 +151,9 @@ class VerifaiDocument:
                 new_coords[key] = 1
         return new_coords
 
-
-    def get_bounding_box_pixelcoords(self, float_coords, im_width=None, im_height=None):
+    def get_bounding_box_pixelcoords(
+            self, float_coords, im_width=None, im_height=None
+    ):
         """
         Get the pixel coords based on the image and the inference
         result.
@@ -170,13 +173,17 @@ class VerifaiDocument:
         }
         return response
 
-    def get_zones(self):
-        if self.zones is None:
+    @property
+    def zones(self):
+        if self.__zones is None:
             data = self.get_model_data()
-            self.zones = []
-            for zone_data in data['zones']:
-                self.zones.append(VerifaiDocumentZone(self, zone_data))
-        return self.zones
+            self.__zones = []
+            if data:  # If there is no data available
+                for zone_data in data['zones']:
+                    self.__zones.append(
+                        VerifaiDocumentZone(self, zone_data)
+                    )
+        return self.__zones
 
     def get_actual_size_mm(self):
         data = self.get_model_data()
@@ -184,7 +191,9 @@ class VerifaiDocument:
 
     def get_model_data(self):
         if not self.__model_data:
-            self.__model_data = self.service.get_model_data(self.id_uuid)
+            self.__model_data = self.service.get_model_data(
+                self.id_uuid
+            )
         return self.__model_data
 
     def mask_zones(self, zones, image=None, filter_sides=True):
@@ -195,7 +204,9 @@ class VerifaiDocument:
         for zone in zones:
             if filter_sides and zone.side != self.id_side:
                 continue
-            px_coords = self.get_bounding_box_pixelcoords(zone.coords, image.width, image.height)
+            px_coords = self.get_bounding_box_pixelcoords(
+                zone.coords, image.width, image.height
+            )
             px_coords = self.__coords_list(px_coords)
             drawer.rectangle(px_coords, c)
 
@@ -248,3 +259,6 @@ class VerifaiDocumentZone:
             'ymax': ymax
         }
 
+    @property
+    def position_in_image(self):
+        return self.coords

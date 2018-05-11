@@ -3,6 +3,10 @@
 Great that you choose to use Verifai for your business or project. This software development kit (SDK) takes
 care of most of the heavy lifting for you. It is aimed to be used for every level of developer. There are some samples provided so you can see it work.
 
+Companies use Verifai to comply with the GDPR legislation that states
+you should not store data about your users and customers that you do not
+need for your business. By masking unneeded data you can comply to that.
+
 Features of this SDK are:
 
  * Detect ID documents in JPEG images (in a privacy guaranteed way)
@@ -22,7 +26,7 @@ This README only contains the basic setup and a simple classify call.
 
 ## Quick introduction
 
-![Highlevel setup](docs/sdk-highlevel.png)
+![Highlevel setup](docs/SDK-flow-design.png)
 
 The basic idea is that all of your users or client's private data stays within
 your own network. Data we do not have, we can not loose.
@@ -70,7 +74,7 @@ SDK. From now on we will assume that you initialized the SDK before use.
     # Classifier" can be found.
     # See the Verifai Server-side Classifier docs for info about how to
     # set it up.
-    service.add_classifier_url('http://localhost:5000/api/')
+    service.add_clasifier_url('http://localhost:5000/api/classify/')
 
     # service is now initialized and ready to use.
 
