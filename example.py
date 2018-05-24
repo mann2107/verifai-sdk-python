@@ -27,7 +27,6 @@ print(document.zones)
 print(document.zones[0].title)
 print(document.zones[0].side)
 
-exit(0)
 # ID Front + masking of all zones
 document = service.classify_image_path('docs/sample_images/dutch-id-front-sample.jpg')
 
@@ -35,3 +34,5 @@ masked_image = document.mask_zones(document.zones)
 
 # Save it
 masked_image.save('masked.jpg')
+
+

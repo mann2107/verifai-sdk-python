@@ -17,6 +17,7 @@ Features of this SDK are:
  * Get a cropped out image from the provided image
  * Get crops of all individual zones
  * Apply masks to the ID document image
+ * Read the Machine Readable Zones of documents
 
 ## Full documentation
 
@@ -26,7 +27,7 @@ This README only contains the basic setup and a simple classify call.
 
 ## Quick introduction
 
-![Highlevel setup](docs/SDK-flow-design.png)
+![Highlevel setup](docs/Server-SDK-flow-with-ocr-design.png)
 
 The basic idea is that all of your users or client's private data stays within
 your own network. Data we do not have, we can not loose.
