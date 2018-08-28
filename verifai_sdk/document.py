@@ -31,13 +31,57 @@ class VerifaiDocument:
 
     def __init__(self, response, b_jpeg_image, service):
         self.service = service
-        self.id_uuid = response['uuid']
-        self.id_side = response['side']
-        self.coordinates = response['coords']
+        if response:
+            self.set_model_data(
+                response['uuid'], response['side']
+            )
+            self.set_coordinates(
+                response['coords']['xmin'],
+                response['coords']['ymin'],
+                response['coords']['xmax'],
+                response['coords']['ymax']
+            )
+
         self.load_image(b_jpeg_image)
         self.__model_data = None
         self.__zones = None
         self.__mrz = None
+        self.__security_features_data = None
+        self.__security_features = None
+
+    def set_model_data(self, id_uuid, id_side):
+        """
+        To set the model data manualy. For example when using a manual
+        flow fallback. This way you are still able to use the other
+        functions of Verifai.
+        :param id_uuid: The UUID of the model
+        :type id_uuid: str
+        :param id_side: The side of the model F or B
+        :type id_side: str
+        """
+        self.id_uuid = id_uuid
+        self.id_side = id_side
+
+    def set_coordinates(self, xmin, ymin, xmax, ymax):
+        """
+        To set the coordinates of the document location in the image
+        manually. For example, you could make a interface that lets
+        the user draw the bounding box around the document in a image.
+        :param xmin: xmin
+        :type xmin: float
+        :param ymin: ymin
+        :type ymin: float
+        :param xmax: xmax
+        :type xmax: float
+        :param ymax: ymax
+        :type ymax: float
+        """
+        self.coordinates = {
+            'xmin': float(xmin),
+            'ymin': float(ymin),
+            'xmax': float(xmax),
+            'ymax': float(ymax)
+        }
 
     @property
     def model(self):
@@ -217,6 +261,29 @@ class VerifaiDocument:
             self.__mrz = VerifaiDocumentMrz(self.mrz_zone)
         return self.__mrz
 
+    @property
+    def security_features(self):
+        """Returns a list of VerifaiDocumentSecurityFeatureZone
+        objects."""
+        if self.__security_features is None:
+            data_list = self.get_security_features_data()
+            self.__security_features = []
+            if data_list:  # If there is no data available
+                for zone_data in data_list:
+                    print(zone_data)
+                    self.__security_features.append(
+                        VerifaiDocumentSecurityFeatureZone(
+                            self, zone_data
+                        )
+                    )
+        return self.__security_features
+
+    def get_security_features_data(self):
+        if not self.__security_features_data:
+            self.__security_features_data = \
+                self.service.get_security_features(self.id_uuid)
+        return self.__security_features_data
+
     def __coordinates_list(self, coordinates):
         """
         Helper to make a PIL coordnates list
@@ -230,38 +297,34 @@ class VerifaiDocument:
                 coordinates['xmax'], coordinates['ymax'])
 
 
-class VerifaiDocumentZone:
+class VerifaiDocumentZoneAbstract:
     """
-    VerifaiDocument objects contain zones, and the zones are represented
-    by this class.
-
-    Every zone has a position in the form of coordinates, a title, and
-    some operations.
+    There are several types of zones, Data zones and Security Feature
+    zones. All types of zones inherrit from this abstract.
     """
     document = None
-    title = None
     side = None
     coordinates = None
 
-    def __init__(self, document, zone_data):
+    def __init__(self, document, side, x, y, width, height):
         """
         Initialize zone
         :param document: The parent VerifaiDocument
         :type document: VerifaiDocument
-        :param zone_data: raw data about the zone form the Verifai Backend
-        :type zone_data: dict
+        :param side: Side of the document
+        :type side: str
+        :param x: xmin of the zone
+        :type x: float
+        :param y: ymin of the zone
+        :type y: flat
+        :param width: width of the zone in factor / percentage
+        :type width: float
+        :param height: height of the zone in factor / percentage
+        :type height: float
         """
         self.document = document
-        self.title = zone_data['title']
-        self.set_side(zone_data['side'])
-        self.set_coordinates(zone_data['x'], zone_data['y'], zone_data['width'], zone_data['height'])
-
-    @property
-    def is_mrz(self):
-        """Return if this zone is the Machine Readable Zone."""
-        if self.title.upper() == 'MRZ':
-            return True
-        return False
+        self.set_side(side)
+        self.set_coordinates(x, y, width, height)
 
     def set_side(self, side):
         """
@@ -304,10 +367,78 @@ class VerifaiDocumentZone:
             'ymax': ymax
         }
 
+
+class VerifaiDocumentZone(VerifaiDocumentZoneAbstract):
+    """
+    VerifaiDocument objects contain zones, and the zones are represented
+    by this class.
+
+    Every zone has a position in the form of coordinates, a title, and
+    some operations.
+    """
+    title = None
+
+    def __init__(self, document, zone_data):
+        """
+        Initialize zone
+        :param document: The parent VerifaiDocument
+        :type document: VerifaiDocument
+        :param zone_data: raw data about the zone form the Verifai Backend
+        :type zone_data: dict
+        """
+        super(VerifaiDocumentZone, self).__init__(
+            document,
+            zone_data['side'],
+            zone_data['x'],
+            zone_data['y'],
+            zone_data['width'],
+            zone_data['height']
+        )
+        self.title = zone_data['title']
+
+    @property
+    def is_mrz(self):
+        """Return if this zone is the Machine Readable Zone."""
+        if self.title.upper() == 'MRZ':
+            return True
+        return False
+
     @property
     def position_in_image(self):
         """Returns: xmin, ymin, xmax, ymax coordinates dict."""
         return self.coordinates
+
+
+class VerifaiDocumentSecurityFeatureZone(VerifaiDocumentZoneAbstract):
+    """
+    Most documents have security features. They are available through
+    the backend.
+    They extend from zones because they always have a location on the
+    document. Sometimes they cover the whole document.
+    """
+    score = 0
+    reference_image = None
+    type = None
+    properties = {}
+    check_type = None
+    check_question = None
+
+    def __init__(self, document, zone_data):
+        super(VerifaiDocumentSecurityFeatureZone, self).__init__(
+            document,
+            zone_data['side'],
+            zone_data['x'],
+            zone_data['y'],
+            zone_data['width'],
+            zone_data['height']
+        )
+        self.reference_image = zone_data['security_feature']['reference_image']
+        self.type = zone_data['security_feature']['type']
+        self.check_type = zone_data['security_feature']['check_type']
+        self.check_type = zone_data['security_feature']['check_question']
+
+        for item in zone_data['security_feature']['properties']:
+            self.properties[item[0]] = item[1]
 
 
 class VerifaiDocumentMrz:
