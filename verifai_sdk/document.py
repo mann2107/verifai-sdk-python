@@ -51,7 +51,7 @@ class VerifaiDocument:
 
     def set_model_data(self, id_uuid, id_side):
         """
-        To set the model data manualy. For example when using a manual
+        To set the model data manually. For example when using a manual
         flow fallback. This way you are still able to use the other
         functions of Verifai.
         :param id_uuid: The UUID of the model
@@ -66,7 +66,7 @@ class VerifaiDocument:
         """
         To set the coordinates of the document location in the image
         manually. For example, you could make a interface that lets
-        the user draw the bounding box around the document in a image.
+        the user draw the bounding box around the document in an image.
         :param xmin: xmin
         :type xmin: float
         :param ymin: ymin
@@ -216,7 +216,7 @@ class VerifaiDocument:
 
     def get_actual_size_mm(self):
         """
-        :return: Returns a the width and height in mm of the document.
+        :return: Returns the width and height in mm of the document.
         :rtype tuple (width_mm, height_mm)
         """
         data = self.get_model_data()
@@ -269,7 +269,7 @@ class VerifaiDocument:
     @property
     def mrz_zone(self):
         """
-        Returns the zone that hold the MRZ.
+        Returns the zone that holds the MRZ.
 
         :return: Zone or None
         :rtype: VerifaiDocumentZone, None
@@ -344,7 +344,7 @@ class VerifaiDocument:
 class VerifaiDocumentZoneAbstract:
     """
     There are several types of zones, Data zones and Security Feature
-    zones. All types of zones inherrit from this abstract.
+    zones. All types of zones inherit from this abstract.
     """
     document = None
     side = None
@@ -514,14 +514,14 @@ class VerifaiDocumentMrz:
     @property
     def is_successful (self):
         """
-        :return: Returns weather the OCR has been successful.
+        :return: Returns whether the OCR has been successful.
         :rtype: bool
         """
         return self.read_mrz()['status'] == 'SUCCESS'
 
     def read_mrz(self):
         """
-        :return: Returns the raw OCR response form the OCR service.
+        :return: Returns the raw OCR response from the OCR service.
         :rtype: dict
         """
         if self.__mrz_response:

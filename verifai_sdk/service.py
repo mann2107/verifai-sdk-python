@@ -149,7 +149,7 @@ class VerifaiService:
         document types registerd in the backend of Verifai.
 
         Example:
-        [{'code': 'AD', 'flag': '🇦🇩'', 'name': 'Andorra'}, ... ]
+        [{'code': 'AD', 'flag': '🇦🇩', 'name': 'Andorra'}, ... ]
 
         :return: list of dicts
         :rtype: list
@@ -176,7 +176,7 @@ class VerifaiService:
 
     def get_id_model(self, uuid):
         """
-        Get the details of one specific document. This is usefull when
+        Get the details of one specific document. This is useful when
         you want to lookup just one IdModel from the backend and you
         already know the UUID of that IdModel.
 
