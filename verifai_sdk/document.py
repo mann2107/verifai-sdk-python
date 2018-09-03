@@ -307,7 +307,6 @@ class VerifaiDocument:
             self.__security_features = []
             if data_list:  # If there is no data available
                 for zone_data in data_list:
-                    print(zone_data)
                     self.__security_features.append(
                         VerifaiDocumentSecurityFeatureZone(
                             self, zone_data
@@ -482,6 +481,7 @@ class VerifaiDocumentSecurityFeatureZone(VerifaiDocumentZoneAbstract):
             zone_data['width'],
             zone_data['height']
         )
+        self.score = zone_data['score']
         self.reference_image = zone_data['security_feature']['reference_image']
         self.type = zone_data['security_feature']['type']
         self.check_type = zone_data['security_feature']['check_type']
