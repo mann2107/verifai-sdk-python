@@ -85,21 +85,34 @@ class VerifaiDocument:
 
     @property
     def model(self):
-        """Returns the model name."""
+        """
+        :return: Returns the model name.
+        :rtype: str
+        """
         return self.get_model_data()['model']
 
     @property
     def country(self):
-        """Returns the Alpha-2 county code. For example "NL" """
+        """
+        :return: Returns the Alpha-2 county code. For example "NL"
+        :rtype: str
+        """
         return self.get_model_data()['country']
 
     @property
     def position_in_image(self):
-        """Return the coordinates where te document is located."""
+        """
+        :return: Return the coordinates where te document is located.
+        :rtype: dict
+        """
         return self.coordinates
 
     def load_image(self, b_jpeg_image):
-        """Load filecontents into the object, and use that as image."""
+        """
+        Load filecontents into the object, and use that as image.
+
+        :param b_jpeg_image: image data bytes
+        """
         f = io.BytesIO(b_jpeg_image)
         self.image = Image.open(f)
 
@@ -187,7 +200,10 @@ class VerifaiDocument:
 
     @property
     def zones(self):
-        """Returns a list of VerifaiDocumentZone objects."""
+        """
+        :return: Returns a list of VerifaiDocumentZone objects.
+        :rtype: [VerifaiDocumentZone]
+        """
         if self.__zones is None:
             data = self.get_model_data()
             self.__zones = []
@@ -199,12 +215,18 @@ class VerifaiDocument:
         return self.__zones
 
     def get_actual_size_mm(self):
-        """Returns a the width and height in mm of the document."""
+        """
+        :return: Returns a the width and height in mm of the document.
+        :rtype tuple (width_mm, height_mm)
+        """
         data = self.get_model_data()
         return float(data['width_mm']), float(data['height_mm'])
 
     def get_model_data(self):
-        """Returns the raw model data via the VerifaiService"""
+        """
+        :return: Returns the raw model data via the VerifaiService
+        :rtype: dict
+        """
         if not self.__model_data:
             self.__model_data = self.service.get_model_data(
                 self.id_uuid
@@ -246,7 +268,12 @@ class VerifaiDocument:
 
     @property
     def mrz_zone(self):
-        """Returns the zone that hold the MRZ."""
+        """
+        Returns the zone that hold the MRZ.
+
+        :return: Zone or None
+        :rtype: VerifaiDocumentZone, None
+        """
         for zone in self.zones:
             if zone.is_mrz:
                 return zone
@@ -254,7 +281,12 @@ class VerifaiDocument:
 
     @property
     def mrz(self):
-        """Returns the VerifaiDocumentMrz object of the mrz_zone."""
+        """
+        Returns the VerifaiDocumentMrz object of the mrz_zone.
+
+        :return: a VerifaiDocumentMrz object
+        :rtype: VerifaiDocumentMrz, None
+        """
         if not self.mrz_zone:
             return None
         if not self.__mrz:
@@ -263,8 +295,13 @@ class VerifaiDocument:
 
     @property
     def security_features(self):
-        """Returns a list of VerifaiDocumentSecurityFeatureZone
-        objects."""
+        """
+        Returns a list of VerifaiDocumentSecurityFeatureZone
+        objects.
+
+        :return: list of VerifaiDocumentSecurityFeatureZone objects
+        :rtype: [VerifaiDocumentSecurityFeatureZone]
+        """
         if self.__security_features is None:
             data_list = self.get_security_features_data()
             self.__security_features = []
@@ -279,6 +316,13 @@ class VerifaiDocument:
         return self.__security_features
 
     def get_security_features_data(self):
+        """
+        Fetches the raw security features data from the API
+        and stores them in memory.
+
+        :return: Raw dict from the API
+        :rtype: dict
+        """
         if not self.__security_features_data:
             self.__security_features_data = \
                 self.service.get_security_features(self.id_uuid)
@@ -291,7 +335,7 @@ class VerifaiDocument:
         :param coordinates: xmin-max ymin-max coords
         :type coordinates: dict
         :return: tuple of coords
-        :rtype: tuple
+        :rtype: tuple (xmin, ymin, xmax, ymax)
         """
         return (coordinates['xmin'], coordinates['ymin'],
                 coordinates['xmax'], coordinates['ymax'])
@@ -398,14 +442,20 @@ class VerifaiDocumentZone(VerifaiDocumentZoneAbstract):
 
     @property
     def is_mrz(self):
-        """Return if this zone is the Machine Readable Zone."""
+        """
+        :return: Return if this zone is the Machine Readable Zone.
+        :rtype: bool
+        """
         if self.title.upper() == 'MRZ':
             return True
         return False
 
     @property
     def position_in_image(self):
-        """Returns: xmin, ymin, xmax, ymax coordinates dict."""
+        """
+        :return: xmin, ymin, xmax, ymax coordinates dict.
+        :rtype: dict
+        """
         return self.coordinates
 
 
@@ -463,11 +513,17 @@ class VerifaiDocumentMrz:
 
     @property
     def is_successful (self):
-        """Returns weather the OCR has been successful."""
+        """
+        :return: Returns weather the OCR has been successful.
+        :rtype: bool
+        """
         return self.read_mrz()['status'] == 'SUCCESS'
 
     def read_mrz(self):
-        """Returns the raw OCR response form the OCR service."""
+        """
+        :return: Returns the raw OCR response form the OCR service.
+        :rtype: dict
+        """
         if self.__mrz_response:
             ocr_result = self.__mrz_response
         else:
@@ -481,28 +537,40 @@ class VerifaiDocumentMrz:
 
     @property
     def fields(self):
-        """Returns the fields form the MRZ."""
+        """
+        :return: Returns the fields form the MRZ.
+        :rtype: dict
+        """
         if self.is_successful:
             return self.read_mrz()['result']['fields']
         return None
 
     @property
     def fields_raw(self):
-        """Returns the raw fields form the MRZ."""
+        """
+        :return: Returns the raw fields form the MRZ.
+        :rtype: dict
+        """
         if self.is_successful:
             return self.read_mrz()['result']['fields_raw']
         return None
 
     @property
     def checksums(self):
-        """Returns the checksum results for the MRZ."""
+        """
+        :return: Returns the checksum results for the MRZ.
+        :rtype: dict
+        """
         if self.is_successful:
             return self.read_mrz()['result']['checksums']
         return None
 
     @property
     def rotation(self):
-        """Returns the rotation that was required to read the MRZ."""
+        """
+        :return: Returns the rotation that was required to read the MRZ.
+        :rtype: float
+        """
         if self.is_successful:
             return self.read_mrz()['rotation']
         return None
