@@ -116,7 +116,7 @@ class VerifaiService:
         :param image: file contents of a JPEG image
         :type image: str
         :return: Initialized VerifaiDocument
-        :rtype: VerifaiDocument or None
+        :rtype: tuple (VerifaiDocument, confidence), None
         """
         r = requests.post(
             self.__get_url('classifier'),
@@ -125,7 +125,7 @@ class VerifaiService:
         )
         response = r.json()
         if response['status'] == 'SUCCESS':
-            return VerifaiDocument(response, image, self)
+            return VerifaiDocument(response, image, self), float(response['confidence'])
 
         return None
 
@@ -137,7 +137,7 @@ class VerifaiService:
         :param image_path: Path to the image
         :type image_path: str
         :return: Initialized VerifaiDocument
-        :rtype: VerifaiDocument or None
+        :rtype: tuple (VerifaiDocument, confidence), None
         """
         f = open(image_path, 'rb')
         i = f.read()

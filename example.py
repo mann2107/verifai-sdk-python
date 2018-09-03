@@ -15,9 +15,11 @@ service.add_clasifier_url(
 # By path to the JPEG
 sample_dir = 'docs/sample_images/'
 image_path = os.path.join(sample_dir, 'dutch-id-front-sample.jpg')
-document = service.classify_image_path(image_path)
+document, confidence = service.classify_image_path(image_path)
 print(document)
 print("Classified as", document.id_uuid)
+print("With confidence level: ", confidence)
+
 print(document.model)
 print(document.country)
 print(document.position_in_image)
@@ -28,7 +30,7 @@ print(document.zones[0].title)
 print(document.zones[0].side)
 
 # ID Front + masking of all zones
-document = service.classify_image_path('docs/sample_images/dutch-id-front-sample.jpg')
+document, confidence = service.classify_image_path('docs/sample_images/dutch-id-front-sample.jpg')
 
 masked_image = document.mask_zones(document.zones)
 
