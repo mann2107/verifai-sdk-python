@@ -41,7 +41,7 @@ def process_file(path, processed_path, service):
     :rtype: bool
     """
     # Classify the file
-    document = service.classify_image_path(path)
+    document, confidence = service.classify_image_path(path)
     filename = os.path.basename(path)
     target_path = os.path.join(processed_path, filename)
 

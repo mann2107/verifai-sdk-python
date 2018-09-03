@@ -4,6 +4,7 @@ import requests
 from PIL import Image
 
 from verifai_sdk.document import VerifaiDocument
+from verifai_sdk.id_model import IdModel
 
 
 class VerifaiService:
@@ -115,7 +116,7 @@ class VerifaiService:
         :param image: file contents of a JPEG image
         :type image: str
         :return: Initialized VerifaiDocument
-        :rtype: VerifaiDocument or None
+        :rtype: tuple (VerifaiDocument, confidence), None
         """
         r = requests.post(
             self.__get_url('classifier'),
@@ -124,7 +125,7 @@ class VerifaiService:
         )
         response = r.json()
         if response['status'] == 'SUCCESS':
-            return VerifaiDocument(response, image, self)
+            return VerifaiDocument(response, image, self), float(response['confidence'])
 
         return None
 
@@ -136,11 +137,72 @@ class VerifaiService:
         :param image_path: Path to the image
         :type image_path: str
         :return: Initialized VerifaiDocument
-        :rtype: VerifaiDocument or None
+        :rtype: tuple (VerifaiDocument, confidence), None
         """
         f = open(image_path, 'rb')
         i = f.read()
         return self.classify_image(i)
+
+    def get_supported_countries(self):
+        """
+        Fetches the list of supported countries. It is based on all the
+        document types registerd in the backend of Verifai.
+
+        Example:
+        [{'code': 'AD', 'flag': '🇦🇩', 'name': 'Andorra'}, ... ]
+
+        :return: list of dicts
+        :rtype: list
+        """
+        results = self.__get_from_api('id-model-countries', None)
+        return results
+
+    def get_id_models_for_country(self, country):
+        """
+        Gets a list of IdModel objects for that specific country. It
+        can be used to make nice listings of documents for manual
+        processing of data.
+
+        :param country: ALPHA-2 country name, for example: NL or US
+        :type country: str
+        :return: list of IdModel objects
+        :rtype: list
+        """
+        results = self.__get_from_api('id-models', {'country': country})
+        idmodels = []
+        for result in results:
+            idmodels.append(IdModel(result))
+        return idmodels
+
+    def get_id_model(self, uuid):
+        """
+        Get the details of one specific document. This is useful when
+        you want to lookup just one IdModel from the backend and you
+        already know the UUID of that IdModel.
+
+        :param uuid: UUID of the IdModel
+        :type uuid: str
+        :return: The found IdModel
+        :rtype: IdModel
+        """
+        results = self.__get_from_api('id-models', {'uuid': uuid})
+        if results:
+            return IdModel(results[0])
+        return None
+
+    def get_security_features(self, uuid):
+        """
+        Get a list of security features from the backend.
+
+        :param uuid: UUID of the IdModel
+        :type uuid: str
+        :return: list of Security Features
+        :rtype: list of dicts
+        """
+        results = self.__get_from_api('id-model-security-features', {
+            'id_model': uuid
+        })
+        return results
 
     def __add_server_url(self, url, skip_unreachable, type):
         try:
@@ -182,9 +244,7 @@ class VerifaiService:
             raise AssertionError('No connection possible for ' + url)
         if not r.status_code == 200:
             raise AssertionError('Got a {0} for {1}'.format(r.status_code, url))
-        methods = r.headers['allow'].split(',')
-        methods.sort()
-        methods = [item.strip() for item in methods]
-
-        assert methods == ['POST', 'OPTIONS']
+        methods = r.headers['allow'].replace(' ', '').split(',')
+        assert 'OPTIONS' in methods
+        assert 'POST' in methods
         return True

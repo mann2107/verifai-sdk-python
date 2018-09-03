@@ -31,31 +31,88 @@ class VerifaiDocument:
 
     def __init__(self, response, b_jpeg_image, service):
         self.service = service
-        self.id_uuid = response['uuid']
-        self.id_side = response['side']
-        self.coordinates = response['coords']
+        if response:
+            self.set_model_data(
+                response['uuid'], response['side']
+            )
+            self.set_coordinates(
+                response['coords']['xmin'],
+                response['coords']['ymin'],
+                response['coords']['xmax'],
+                response['coords']['ymax']
+            )
+
         self.load_image(b_jpeg_image)
         self.__model_data = None
         self.__zones = None
         self.__mrz = None
+        self.__security_features_data = None
+        self.__security_features = None
+
+    def set_model_data(self, id_uuid, id_side):
+        """
+        To set the model data manually. For example when using a manual
+        flow fallback. This way you are still able to use the other
+        functions of Verifai.
+        :param id_uuid: The UUID of the model
+        :type id_uuid: str
+        :param id_side: The side of the model F or B
+        :type id_side: str
+        """
+        self.id_uuid = id_uuid
+        self.id_side = id_side
+
+    def set_coordinates(self, xmin, ymin, xmax, ymax):
+        """
+        To set the coordinates of the document location in the image
+        manually. For example, you could make a interface that lets
+        the user draw the bounding box around the document in an image.
+        :param xmin: xmin
+        :type xmin: float
+        :param ymin: ymin
+        :type ymin: float
+        :param xmax: xmax
+        :type xmax: float
+        :param ymax: ymax
+        :type ymax: float
+        """
+        self.coordinates = {
+            'xmin': float(xmin),
+            'ymin': float(ymin),
+            'xmax': float(xmax),
+            'ymax': float(ymax)
+        }
 
     @property
     def model(self):
-        """Returns the model name."""
+        """
+        :return: Returns the model name.
+        :rtype: str
+        """
         return self.get_model_data()['model']
 
     @property
     def country(self):
-        """Returns the Alpha-2 county code. For example "NL" """
+        """
+        :return: Returns the Alpha-2 county code. For example "NL"
+        :rtype: str
+        """
         return self.get_model_data()['country']
 
     @property
     def position_in_image(self):
-        """Return the coordinates where te document is located."""
+        """
+        :return: Return the coordinates where te document is located.
+        :rtype: dict
+        """
         return self.coordinates
 
     def load_image(self, b_jpeg_image):
-        """Load filecontents into the object, and use that as image."""
+        """
+        Load filecontents into the object, and use that as image.
+
+        :param b_jpeg_image: image data bytes
+        """
         f = io.BytesIO(b_jpeg_image)
         self.image = Image.open(f)
 
@@ -143,7 +200,10 @@ class VerifaiDocument:
 
     @property
     def zones(self):
-        """Returns a list of VerifaiDocumentZone objects."""
+        """
+        :return: Returns a list of VerifaiDocumentZone objects.
+        :rtype: [VerifaiDocumentZone]
+        """
         if self.__zones is None:
             data = self.get_model_data()
             self.__zones = []
@@ -155,12 +215,18 @@ class VerifaiDocument:
         return self.__zones
 
     def get_actual_size_mm(self):
-        """Returns a the width and height in mm of the document."""
+        """
+        :return: Returns the width and height in mm of the document.
+        :rtype tuple (width_mm, height_mm)
+        """
         data = self.get_model_data()
         return float(data['width_mm']), float(data['height_mm'])
 
     def get_model_data(self):
-        """Returns the raw model data via the VerifaiService"""
+        """
+        :return: Returns the raw model data via the VerifaiService
+        :rtype: dict
+        """
         if not self.__model_data:
             self.__model_data = self.service.get_model_data(
                 self.id_uuid
@@ -202,7 +268,12 @@ class VerifaiDocument:
 
     @property
     def mrz_zone(self):
-        """Returns the zone that hold the MRZ."""
+        """
+        Returns the zone that holds the MRZ.
+
+        :return: Zone or None
+        :rtype: VerifaiDocumentZone, None
+        """
         for zone in self.zones:
             if zone.is_mrz:
                 return zone
@@ -210,12 +281,52 @@ class VerifaiDocument:
 
     @property
     def mrz(self):
-        """Returns the VerifaiDocumentMrz object of the mrz_zone."""
+        """
+        Returns the VerifaiDocumentMrz object of the mrz_zone.
+
+        :return: a VerifaiDocumentMrz object
+        :rtype: VerifaiDocumentMrz, None
+        """
         if not self.mrz_zone:
             return None
         if not self.__mrz:
             self.__mrz = VerifaiDocumentMrz(self.mrz_zone)
         return self.__mrz
+
+    @property
+    def security_features(self):
+        """
+        Returns a list of VerifaiDocumentSecurityFeatureZone
+        objects.
+
+        :return: list of VerifaiDocumentSecurityFeatureZone objects
+        :rtype: [VerifaiDocumentSecurityFeatureZone]
+        """
+        if self.__security_features is None:
+            data_list = self.get_security_features_data()
+            self.__security_features = []
+            if data_list:  # If there is no data available
+                for zone_data in data_list:
+                    print(zone_data)
+                    self.__security_features.append(
+                        VerifaiDocumentSecurityFeatureZone(
+                            self, zone_data
+                        )
+                    )
+        return self.__security_features
+
+    def get_security_features_data(self):
+        """
+        Fetches the raw security features data from the API
+        and stores them in memory.
+
+        :return: Raw dict from the API
+        :rtype: dict
+        """
+        if not self.__security_features_data:
+            self.__security_features_data = \
+                self.service.get_security_features(self.id_uuid)
+        return self.__security_features_data
 
     def __coordinates_list(self, coordinates):
         """
@@ -224,44 +335,40 @@ class VerifaiDocument:
         :param coordinates: xmin-max ymin-max coords
         :type coordinates: dict
         :return: tuple of coords
-        :rtype: tuple
+        :rtype: tuple (xmin, ymin, xmax, ymax)
         """
         return (coordinates['xmin'], coordinates['ymin'],
                 coordinates['xmax'], coordinates['ymax'])
 
 
-class VerifaiDocumentZone:
+class VerifaiDocumentZoneAbstract:
     """
-    VerifaiDocument objects contain zones, and the zones are represented
-    by this class.
-
-    Every zone has a position in the form of coordinates, a title, and
-    some operations.
+    There are several types of zones, Data zones and Security Feature
+    zones. All types of zones inherit from this abstract.
     """
     document = None
-    title = None
     side = None
     coordinates = None
 
-    def __init__(self, document, zone_data):
+    def __init__(self, document, side, x, y, width, height):
         """
         Initialize zone
         :param document: The parent VerifaiDocument
         :type document: VerifaiDocument
-        :param zone_data: raw data about the zone form the Verifai Backend
-        :type zone_data: dict
+        :param side: Side of the document
+        :type side: str
+        :param x: xmin of the zone
+        :type x: float
+        :param y: ymin of the zone
+        :type y: flat
+        :param width: width of the zone in factor / percentage
+        :type width: float
+        :param height: height of the zone in factor / percentage
+        :type height: float
         """
         self.document = document
-        self.title = zone_data['title']
-        self.set_side(zone_data['side'])
-        self.set_coordinates(zone_data['x'], zone_data['y'], zone_data['width'], zone_data['height'])
-
-    @property
-    def is_mrz(self):
-        """Return if this zone is the Machine Readable Zone."""
-        if self.title.upper() == 'MRZ':
-            return True
-        return False
+        self.set_side(side)
+        self.set_coordinates(x, y, width, height)
 
     def set_side(self, side):
         """
@@ -304,10 +411,84 @@ class VerifaiDocumentZone:
             'ymax': ymax
         }
 
+
+class VerifaiDocumentZone(VerifaiDocumentZoneAbstract):
+    """
+    VerifaiDocument objects contain zones, and the zones are represented
+    by this class.
+
+    Every zone has a position in the form of coordinates, a title, and
+    some operations.
+    """
+    title = None
+
+    def __init__(self, document, zone_data):
+        """
+        Initialize zone
+        :param document: The parent VerifaiDocument
+        :type document: VerifaiDocument
+        :param zone_data: raw data about the zone form the Verifai Backend
+        :type zone_data: dict
+        """
+        super(VerifaiDocumentZone, self).__init__(
+            document,
+            zone_data['side'],
+            zone_data['x'],
+            zone_data['y'],
+            zone_data['width'],
+            zone_data['height']
+        )
+        self.title = zone_data['title']
+
+    @property
+    def is_mrz(self):
+        """
+        :return: Return if this zone is the Machine Readable Zone.
+        :rtype: bool
+        """
+        if self.title.upper() == 'MRZ':
+            return True
+        return False
+
     @property
     def position_in_image(self):
-        """Returns: xmin, ymin, xmax, ymax coordinates dict."""
+        """
+        :return: xmin, ymin, xmax, ymax coordinates dict.
+        :rtype: dict
+        """
         return self.coordinates
+
+
+class VerifaiDocumentSecurityFeatureZone(VerifaiDocumentZoneAbstract):
+    """
+    Most documents have security features. They are available through
+    the backend.
+    They extend from zones because they always have a location on the
+    document. Sometimes they cover the whole document.
+    """
+    score = 0
+    reference_image = None
+    type = None
+    properties = {}
+    check_type = None
+    check_question = None
+
+    def __init__(self, document, zone_data):
+        super(VerifaiDocumentSecurityFeatureZone, self).__init__(
+            document,
+            zone_data['side'],
+            zone_data['x'],
+            zone_data['y'],
+            zone_data['width'],
+            zone_data['height']
+        )
+        self.reference_image = zone_data['security_feature']['reference_image']
+        self.type = zone_data['security_feature']['type']
+        self.check_type = zone_data['security_feature']['check_type']
+        self.check_type = zone_data['security_feature']['check_question']
+
+        for item in zone_data['security_feature']['properties']:
+            self.properties[item[0]] = item[1]
 
 
 class VerifaiDocumentMrz:
@@ -332,11 +513,17 @@ class VerifaiDocumentMrz:
 
     @property
     def is_successful (self):
-        """Returns weather the OCR has been successful."""
+        """
+        :return: Returns whether the OCR has been successful.
+        :rtype: bool
+        """
         return self.read_mrz()['status'] == 'SUCCESS'
 
     def read_mrz(self):
-        """Returns the raw OCR response form the OCR service."""
+        """
+        :return: Returns the raw OCR response from the OCR service.
+        :rtype: dict
+        """
         if self.__mrz_response:
             ocr_result = self.__mrz_response
         else:
@@ -350,28 +537,40 @@ class VerifaiDocumentMrz:
 
     @property
     def fields(self):
-        """Returns the fields form the MRZ."""
+        """
+        :return: Returns the fields form the MRZ.
+        :rtype: dict
+        """
         if self.is_successful:
             return self.read_mrz()['result']['fields']
         return None
 
     @property
     def fields_raw(self):
-        """Returns the raw fields form the MRZ."""
+        """
+        :return: Returns the raw fields form the MRZ.
+        :rtype: dict
+        """
         if self.is_successful:
             return self.read_mrz()['result']['fields_raw']
         return None
 
     @property
     def checksums(self):
-        """Returns the checksum results for the MRZ."""
+        """
+        :return: Returns the checksum results for the MRZ.
+        :rtype: dict
+        """
         if self.is_successful:
             return self.read_mrz()['result']['checksums']
         return None
 
     @property
     def rotation(self):
-        """Returns the rotation that was required to read the MRZ."""
+        """
+        :return: Returns the rotation that was required to read the MRZ.
+        :rtype: float
+        """
         if self.is_successful:
             return self.read_mrz()['rotation']
         return None
