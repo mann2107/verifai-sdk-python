@@ -116,7 +116,7 @@ class VerifaiService:
         :param image: file contents of a JPEG image
         :type image: str
         :return: Initialized VerifaiDocument
-        :rtype: tuple (VerifaiDocument, confidence), None
+        :rtype: tuple (VerifaiDocument, confidence), tuple (None, None)
         """
         r = requests.post(
             self.__get_url('classifier'),
@@ -127,7 +127,7 @@ class VerifaiService:
         if response['status'] == 'SUCCESS':
             return VerifaiDocument(response, image, self), float(response['confidence'])
 
-        return None
+        return None, 0.0
 
     def classify_image_path(self, image_path):
         """
@@ -142,6 +142,21 @@ class VerifaiService:
         f = open(image_path, 'rb')
         i = f.read()
         return self.classify_image(i)
+
+    def classify_pil_image(self, image):
+        """
+        Wraper around `classify_image` that converts the image to a jpeg
+        before sending it to the classifier.
+
+        :param image: A PIL Image
+        :type image: Image
+        :return: Initialized VerifaiDocument
+        :rtype: tuple (VerifaiDocument, confidence), tuple (None, None)
+        """
+        jpeg_image = io.BytesIO()
+        image.save(jpeg_image, 'jpeg')
+        return self.classify_image(jpeg_image.getvalue())
+
 
     def get_supported_countries(self):
         """
