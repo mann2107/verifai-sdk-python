@@ -3,6 +3,7 @@ import tempfile
 import os.path
 from os import listdir
 import re
+import shutil
 
 
 class VerifaiPdfProcessor:
@@ -29,7 +30,6 @@ class VerifaiPdfProcessor:
             self.service = service
 
     def __get_tmp(self):
-        return "."
         if not self.__tmp:
             self.__tmp = tempfile.gettempdir()
         return self.__tmp
@@ -82,3 +82,15 @@ class VerifaiPdfProcessor:
         for page in range(self.get_nuber_of_pages()):
             results.append(self.get_result_for_page(page))
         return results
+
+    def cleanup(self):
+        """
+        Should not be forgotten to call, otherwise it leaves stuff in
+        a temp folder.
+        :return: nothing
+        """
+        if self.__tmp and os.path.exists(self.__tmp):
+            shutil.rmtree(self.__tmp)
+
+    def __del__(self):
+        self.cleanup()
